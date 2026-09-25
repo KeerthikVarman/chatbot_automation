@@ -126,9 +126,9 @@ steps:
       - '0'
       - '--max-instances'
       - '2'
-      # Application environment variables
+      # Application environment variables (disabling automatic webhooks/ETL/telemetry)
       - '--set-env-vars'
-      - 'OPENROUTER_MODEL=openai/gpt-oss-20b'
+      - 'OPENROUTER_MODEL=openai/gpt-oss-20b,AUTOMATIC_WEBHOOKS=false,AUTOMATIC_ETL=false,STREAMLIT_BROWSER_GATHER_USAGE_STATS=false,STREAMLIT_SERVER_HEADLESS=true'
       # Secret Manager binding
       - '--set-secrets'
       - 'OPENROUTER_API_KEY=OPENROUTER_API_KEY:latest'

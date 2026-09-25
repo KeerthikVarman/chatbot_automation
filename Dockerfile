@@ -6,6 +6,12 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV PORT=8000
 
+# Explicitly disable automatic webhooks, automatic background ETL pipelines, and usage stats
+ENV AUTOMATIC_WEBHOOKS=false
+ENV AUTOMATIC_ETL=false
+ENV STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
+ENV STREAMLIT_SERVER_HEADLESS=true
+
 # Set working directory inside container
 WORKDIR /app
 
