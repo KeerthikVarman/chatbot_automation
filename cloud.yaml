@@ -23,7 +23,7 @@ steps:
       - 'push'
       - 'asia-south1-docker.pkg.dev/aiconv-509704/aicon/aiconv:latest'
 
-  # Step 3: Deploy container image to Google Cloud Run
+  # Step 3: Deploy container image to Google Cloud Run with Secret Manager Binding
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     id: 'Deploy to Cloud Run'
     entrypoint: gcloud
@@ -40,6 +40,8 @@ steps:
       - '--port'
       - '8000'
       - '--allow-unauthenticated'
+      - '--set-secrets=OPENROUTER_API_KEY=OPENROUTER_API_KEY:latest'
+      - '--set-env-vars=OPENROUTER_MODEL=openai/gpt-oss-20b'
 
 images:
   - 'asia-south1-docker.pkg.dev/aiconv-509704/aicon/aiconv:$COMMIT_SHA'
