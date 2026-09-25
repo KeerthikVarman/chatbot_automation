@@ -97,9 +97,6 @@ Create or update `.env` in the project root:
 OPENROUTER_API_KEY="your-openrouter-api-key"
 OPENROUTER_MODEL="openai/gpt-oss-20b"
 
-# Optional Alternative Providers
-GROQ_API_KEY="your-groq-api-key"
-OPENAI_API_KEY="your-openai-api-key"
 ```
 
 ---
