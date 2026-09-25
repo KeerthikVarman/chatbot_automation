@@ -196,6 +196,4 @@ gcloud builds submit --config=cloudbuild.yaml
 
 ---
 
-## License
-
-MIT License.
+## Thank You For Visiting.
