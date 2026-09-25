@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  ai-workflow-builder:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ai_workflow_builder
+    ports:
+      - "8000:8000"
+      - "8501:8501"
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

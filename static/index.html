@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Conversational Workflow Builder</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <nav class="navbar">
+    <a href="#" class="brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+      </div>
+      <span class="brand-title">AI Workflow Builder</span>
+    </a>
+    <div class="nav-actions">
+      <span style="font-size: 0.8rem; color: var(--text-muted);" id="session-display">Session: Initializing...</span>
+      <button class="btn btn-secondary btn-sm" id="btn-reset">
+        <svg style="width: 14px; height: 14px; stroke: currentColor; fill: none;" viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+        New Workflow
+      </button>
+      <button class="btn btn-primary btn-sm" id="btn-export" style="display: none;">
+        <svg style="width: 14px; height: 14px; stroke: currentColor; fill: none;" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+        Export JSON
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main Application Container -->
+  <main class="app-container">
+    
+    <!-- Left Panel: Preset Test Scenarios -->
+    <aside class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          Quick Presets
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="preset-list">
+          <div class="preset-card" data-prompt="I want to receive a Slack notification whenever I get a new invoice.">
+            <div class="preset-name">
+              <span>Invoice Alert</span>
+              <span class="badge badge-miss">Needs Info</span>
+            </div>
+            <div class="preset-desc">Gmail invoice trigger &rarr; Slack notification</div>
+          </div>
+
+          <div class="preset-card" data-prompt="When a GitHub issue labeled bug is created, notify Slack.">
+            <div class="preset-name">
+              <span>GitHub Bug Alert</span>
+              <span class="badge badge-miss">Needs Info</span>
+            </div>
+            <div class="preset-desc">GitHub issue trigger &rarr; Slack channel alert</div>
+          </div>
+
+          <div class="preset-card" data-prompt="When someone submits my website contact form, save their details to Google Sheets.">
+            <div class="preset-name">
+              <span>Web Form Ingestion</span>
+              <span class="badge badge-miss">Needs Info</span>
+            </div>
+            <div class="preset-desc">Web contact form &rarr; Google Sheets row</div>
+          </div>
+
+          <div class="preset-card" data-prompt="When a new email with subject 'Urgent' arrives in my Gmail inbox for account user@example.com, send a Slack notification to the #alerts channel in the Acme workspace.">
+            <div class="preset-name">
+              <span>Fully Specified</span>
+              <span class="badge badge-col">Complete</span>
+            </div>
+            <div class="preset-desc">Instant generation (No clarification needed)</div>
+          </div>
+
+          <div class="preset-card" data-prompt="Send important emails to my team.">
+            <div class="preset-name">
+              <span>Ambiguous Request</span>
+              <span class="badge badge-miss">Vague</span>
+            </div>
+            <div class="preset-desc">Multi-interpretation requiring clarification</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Center Panel: Conversational Assistant -->
+    <section class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+          Conversational Assistant
+        </div>
+        <span class="badge badge-col" id="status-badge">&bull; Ready</span>
+      </div>
+      <div class="panel-body" style="display: flex; flex-direction: column;">
+        <div class="chat-messages" id="chat-messages">
+          <div class="chat-bubble assistant">
+            <div class="chat-avatar">⚡</div>
+            <div class="chat-content">
+              <strong>Hello!</strong> Describe your automation goal in plain English. I'll dynamically determine the required parameters and guide you step by step.
+            </div>
+          </div>
+        </div>
+
+        <div class="chat-input-area">
+          <div class="suggestion-chips" id="suggestion-chips">
+            <span class="chip" data-text="Slack channel #finance">Slack #finance</span>
+            <span class="chip" data-text="Gmail inbox user@acme.com">Gmail user@acme.com</span>
+            <span class="chip" data-text="Subject contains 'Invoice'">Subject filter</span>
+            <span class="chip" data-text="Google Sheets name 'Leads'">Sheets 'Leads'</span>
+          </div>
+          <form class="chat-input-form" id="chat-form">
+            <input type="text" class="chat-input" id="user-input" placeholder="Type your automation request or answer..." autocomplete="off">
+            <button type="submit" class="btn btn-primary">Send</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Panel: Live State Inspector & DAG Visualizer -->
+    <aside class="panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <svg viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+          Dynamic State Inspector
+        </div>
+      </div>
+      <div class="panel-body">
+        
+        <!-- Readiness Gauge -->
+        <div class="readiness-bar-container">
+          <div class="readiness-header">
+            <span>Workflow Readiness</span>
+            <span id="readiness-pct">0%</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="progress-fill"></div>
+          </div>
+        </div>
+
+        <div class="section-label">Workflow Type</div>
+        <div style="font-weight: 600; color: var(--secondary); font-size: 0.9rem;" id="wf-type">Not determined</div>
+
+        <div class="section-label">Required Parameters</div>
+        <div class="badges-group" id="req-badges">
+          <span style="font-size: 0.8rem; color: var(--text-dim);">Awaiting prompt...</span>
+        </div>
+
+        <div class="section-label">Collected Parameters</div>
+        <table class="param-table" id="param-table">
+          <tbody>
+            <tr><td colspan="2" style="color: var(--text-dim); text-align: center;">No parameters collected yet.</td></tr>
+          </tbody>
+        </table>
+
+        <div class="section-label">Missing / Clarifications</div>
+        <div class="badges-group" id="miss-badges">
+          <span style="font-size: 0.8rem; color: var(--text-dim);">None</span>
+        </div>
+
+        <!-- Dynamic DAG Visualizer -->
+        <div class="section-label" style="margin-top: 1.5rem;">DAG Workflow Visualizer</div>
+        <div class="dag-container" id="dag-container">
+          <span style="color: var(--text-dim); font-size: 0.85rem;">Generated DAG workflow diagram will render here when ready.</span>
+        </div>
+
+      </div>
+    </aside>
+
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
