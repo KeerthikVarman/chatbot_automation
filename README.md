@@ -1,108 +1,105 @@
-# ⚡ AI Conversational Workflow Builder
+# AI Conversational Workflow Builder
 
-An agentic, multi-provider AI workflow architecture built with **LangGraph**, **FastAPI**, **Streamlit**, and **UI/UX Pro Max** design system standards.
+An agentic AI workflow planning system built with LangGraph, FastAPI, Streamlit, and UI/UX Pro Max design standards.
 
-Transform plain English automation goals into structured, executable DAG (Directed Acyclic Graph) workflow specifications with dynamic requirement extraction, single-question clarification loops, and multi-model fallback execution.
-
----
-
-## 🌟 Key Features
-
-- 🧠 **Dynamic Requirement Identification**: Automatically determines required parameters for triggers, actions, and filters (Gmail, Slack, GitHub, Google Sheets, webhooks) without hardcoding.
-- 💬 **Single-Question Clarification Loop**: Enforces strictly one clarification question at a time when parameters are missing or ambiguous — never overwhelming the user.
-- 🔄 **LangGraph Agentic State Machine**: Powered by a robust state graph (`analyze_request` $\rightarrow$ `clarification` | `generate_workflow`).
-- 🛡️ **Multi-Model Provider Fallback Engine**: Seamlessly supports **OpenRouter**, **Groq**, and **OpenAI**. Automatically falls back to secondary models (`openai/gpt-oss-20b` $\rightarrow$ `openai/gpt-oss-120b` $\rightarrow$ `llama-3.3-70b`) on rate limits or API downtime.
-- 🎨 **UI/UX Pro Max Interfaces**:
-  - **Streamlit Web Dashboard (`app.py`)**: Glassmorphism dark slate UI, real-time readiness gauge ($0\% \rightarrow 100\%$), parameter matrix, Mermaid DAG visualizer, and 1-click `.json` workflow download.
-  - **FastAPI Interactive Web Client (`static/index.html`)**: Single-page Web App with preset scenario triggers, conversational chat assistant, suggestion chips, live state drawer, and Mermaid.js DAG renderer.
-- 🧪 **Comprehensive Test Suite**: Automated `pytest` suite testing all preset scenarios, dynamic state persistence, and FastAPI REST endpoints.
+The application converts natural language automation requests into structured, executable DAG (Directed Acyclic Graph) workflow specifications with dynamic parameter extraction, single-question clarification loops, and automatic multi-model fallbacks.
 
 ---
 
-## 🏗️ Architecture & LangGraph State Machine
+## Architecture Overview
 
 ```mermaid
 graph TD
-    A[Start: User Prompt] --> B[analyze_request_node]
-    B --> C{check_missing_information}
-    C -- Clarification Needed --> D[clarification_node]
-    D --> E[End: Wait for User Reply]
+    A[User Input] --> B[analyze_request_node]
+    B --> C{Missing Info Check}
+    C -- Clarification Required --> D[clarification_node]
+    D --> E[Wait for User Reply]
     C -- All Info Collected --> F[generate_workflow_node]
-    F --> G[End: Workflow Spec Ready]
+    F --> G[Workflow Spec Ready]
 ```
 
-### Component Structure
+### Directory Structure
+
 ```
 AI_cov/
-├── agent.py                 # LangGraph state graph & node execution logic
+├── agent.py                 # LangGraph state machine & node logic
 ├── api.py                   # FastAPI REST server & static web app host
-├── app.py                   # Streamlit interactive web dashboard
-├── config.py                # LLM provider config & multi-model fallback engine
-├── models.py                # Pydantic & LangGraph state models
-├── state_manager.py         # Multi-turn conversation state persistence
-├── tools.py                 # Abstract tool prompt summaries
+├── app.py                   # Streamlit web dashboard
+├── config.py                # LLM provider configuration & fallback manager
+├── models.py                # Pydantic schemas & state models
+├── state_manager.py         # Conversation state persistence
+├── tools.py                 # Tool prompt summaries
 ├── static/                  # Single-Page Web Application frontend
-│   ├── index.html           # HTML5 UI structure
-│   ├── styles.css           # UI/UX Pro Max dark glassmorphic CSS tokens
-│   └── app.js               # Interactive JS state controller & Mermaid renderer
-├── design-system/           # Persisted UI/UX Pro Max Master Specification
+│   ├── index.html           # Web app structure
+│   ├── styles.css           # UI/UX Pro Max dark mode stylesheet
+│   └── app.js               # Client controller & Mermaid DAG renderer
+├── design-system/           # UI/UX Pro Max Master Specification
 │   └── ai-workflow-builder/
-│       └── MASTER.md        # Master design tokens & style guide
-└── tests/                   # Automated pytest suite
-    └── test_workflow_builder.py
+│       └── MASTER.md
+├── tests/                   # Automated pytest test suite
+│   └── test_workflow_builder.py
+├── Dockerfile               # Container definition
+├── docker-compose.yml       # Local container orchestration
+├── cloudbuild.yaml          # Google Cloud Build CI/CD pipeline
+└── requirements.txt         # Python dependencies
 ```
 
 ---
 
-## 🛠️ Technology Stack
+## Step-by-Step Setup Guide
 
-- **Core Logic**: Python 3.14+, LangGraph, LangChain, Pydantic v2
-- **LLM Providers**: OpenRouter, Groq API, OpenAI API
-- **Web Applications**: Streamlit, FastAPI, Uvicorn, HTML5/Vanilla CSS3/JavaScript
-- **Visualization**: Mermaid.js DAG renderer
-- **Testing**: pytest, FastAPI TestClient
+Follow these steps sequentially to set up, configure, and run the project locally.
 
----
-
-## 🚀 Getting Started
-
-### 1. Prerequisites
-- Python 3.10+ installed on your system.
-
-### 2. Installation & Virtual Environment
+### Step 1: Clone Repository and Navigate to Workspace
 
 ```bash
-# Clone or open workspace directory
-cd AI_cov
+git clone https://github.com/KeerthikVarman/chatbot_automation.git
+cd chatbot_automation
+```
 
-# Create virtual environment
+### Step 2: Create and Activate Virtual Environment
+
+**On Windows (PowerShell):**
+```powershell
 python -m venv venv
-
-# Activate virtual environment
-# Windows PowerShell:
 .\venv\Scripts\Activate.ps1
-# Linux/macOS:
-source venv/bin/activate
+```
 
-# Install requirements (if needed)
+**On Linux / macOS:**
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+### Step 3: Install All Project Dependencies
+
+Install all required Python packages specified in `requirements.txt`:
+
+```bash
+python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-### 3. Environment Configuration (`.env`)
+### Step 4: Configure Environment Variables
 
-Create or update `.env` in the project root:
+Create a `.env` file in the root directory of the project:
 
 ```env
-# OpenRouter (Recommended)
-OPENROUTER_API_KEY="your-openrouter-api-key"
+OPENROUTER_API_KEY="your_openrouter_api_key_here"
 OPENROUTER_MODEL="openai/gpt-oss-20b"
+```
 
+*Optional alternative providers:*
+```env
+GROQ_API_KEY="your_groq_api_key_here"
+OPENAI_API_KEY="your_openai_api_key_here"
 ```
 
 ---
 
-## 💻 Running the Applicatio
-### Option A: Streamlit Interactive Web Dashboard
+## Running the Applications
+
+### Option A: Run Streamlit Interactive Web Dashboard
 
 Launch the Streamlit interface on `http://localhost:8501`:
 
@@ -110,63 +107,68 @@ Launch the Streamlit interface on `http://localhost:8501`:
 streamlit run app.py
 ```
 
-### Option B: FastAPI Server & Single-Page Web Client
+### Option B: Run FastAPI Server & Single-Page Web Client
 
-Launch the FastAPI server and interactive web client on `http://localhost:8000`:
+Launch the FastAPI server and web client on `http://localhost:8000`:
 
 ```bash
-uvicorn api:app --reload --port 8000
+uvicorn api:app --host 127.0.0.1 --port 8000
 ```
-- **Web App**: Open `http://localhost:8000/` in your browser.
-- **Swagger API Docs**: Open `http://localhost:8000/docs`.
+
+- **Interactive Web App**: Open `http://localhost:8000/` in your browser.
+- **REST API Swagger Documentation**: Open `http://localhost:8000/docs`.
 
 ---
 
-## 🔌 API Reference
+## Running Automated Tests
+
+Run the full `pytest` test suite to verify all 7 scenario test cases:
+
+```bash
+pytest -v
+```
+
+---
+
+## Docker Container Deployment
+
+### Local Docker Compose Run
+
+```bash
+docker compose up --build
+```
+
+### Manual Docker Build and Run
+
+```bash
+docker build -t ai-workflow-builder:latest .
+docker run -d -p 8000:8000 --env-file .env --name workflow_builder ai-workflow-builder:latest
+```
+
+---
+
+## Google Cloud Build & Cloud Run CI/CD
+
+Submit the Cloud Build pipeline to deploy to Google Artifact Registry and Cloud Run:
+
+```bash
+gcloud builds submit --config=cloudbuild.yaml
+```
+
+---
+
+## REST API Reference
 
 | Endpoint | Method | Description |
 |---|---|---|
 | `/` | `GET` | Serves the interactive HTML5/JS Web Application |
-| `/chat` | `POST` | Processes user prompt turn, updates state, returns clarification or workflow |
-| `/conversations/{id}` | `GET` | Retrieves current session state for dynamic inspection |
+| `/chat` | `POST` | Processes user prompt turn and returns clarification or workflow |
+| `/conversations/{id}` | `GET` | Retrieves session state for visual inspection |
 | `/conversations/{id}/reset` | `POST` | Resets state for a given conversation ID |
-| `/health` | `GET` | API health check endpoint |
-
-### Sample Chat Request Body (`POST /chat`)
-
-```json
-{
-  "conversation_id": "session_demo_01",
-  "message": "When a new email with subject 'Urgent' arrives in my Gmail inbox for account user@example.com, send a Slack notification to #alerts channel in Acme workspace."
-}
-```
+| `/health` | `GET` | Health check endpoint |
 
 ---
 
-## 🧪 Running Tests
+## License
 
-Execute the comprehensive automated test suite:
-
-```bash
-pytest
-```
-Or directly via virtual environment:
-```bash
-.\venv\Scripts\pytest.exe
-```
-
----
-
-## 🎨 UI/UX Pro Max Design System
-
-This project strictly adheres to the **UI/UX Pro Max** design system:
-- **Design Master File**: [`design-system/ai-workflow-builder/MASTER.md`](file:///e:/AI_cov/design-system/ai-workflow-builder/MASTER.md)
-- **Palette**: Deep Slate Dark Mode (`#0B0F17` background, `#141B2D` card glass surface)
-- **Accents**: Violet (`#7C3AED`) $\rightarrow$ Indigo (`#6366F1`) $\rightarrow$ Cyan (`#06B6D4`) AI Glow
-- **Typography**: Space Grotesk (Headings), Inter (Body), Fira Code (Code/Params)
-
----
-
-## 📄 License
-
-MIT License. Built with ❤️ for AI Automation.
+MIT License.
