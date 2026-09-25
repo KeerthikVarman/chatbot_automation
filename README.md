@@ -101,8 +101,7 @@ OPENROUTER_MODEL="openai/gpt-oss-20b"
 
 ---
 
-## 💻 Running the Applications
-
+## 💻 Running the Applicatio
 ### Option A: Streamlit Interactive Web Dashboard
 
 Launch the Streamlit interface on `http://localhost:8501`:
