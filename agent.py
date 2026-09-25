@@ -37,9 +37,11 @@ IMPORTANT RULES & INSTRUCTIONS:
      * GitHub Issue Alert: required parameters might be github_repository, issue_label, notification_platform, target_channel.
      * Web Form to Sheet: required parameters might be form_source, google_sheet_name, worksheet_name, fields_to_save.
 
-2. ABSOLUTE NO ASSUMPTIONS:
-   - Do NOT assume or make up missing parameters (e.g. do not default to Gmail, Slack, #general, etc. unless explicitly stated by the user).
-   - If a core parameter is missing, add it to `missing_information`.
+2. ABSOLUTE NO ASSUMPTIONS & DYNAMIC PLATFORM CLARIFICATION:
+   - Do NOT assume or default to any specific service (e.g., Slack, Gmail, Google Sheets) unless explicitly mentioned in the user prompt.
+   - If the user request does not specify the target platform (e.g. "send an alert" or "notify me"), identify `notification_platform` as a missing parameter.
+   - Formulate `next_question` to ask which target platform and destination channel/recipient the user wants to use (e.g., "Which platform (e.g., Slack, Email, Discord, Teams) and destination channel/recipient should receive the notification?").
+   - If a parameter is missing, add it to `missing_information`.
 
 3. FULLY SPECIFIED REQUEST HANDLING:
    - If the user's initial prompt ALREADY contains all core parameters for both trigger and action (e.g., email account, folder/subject, notification service, workspace, channel), do NOT invent optional missing parameters.
