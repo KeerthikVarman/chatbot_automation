@@ -13,12 +13,40 @@ The application converts natural language automation requests into structured, e
 
 ```mermaid
 graph TD
-    A[User Input] --> B[analyze_request_node]
-    B --> C{Missing Info Check}
-    C -- Clarification Required --> D[clarification_node]
-    D --> E[Wait for User Reply]
-    C -- All Info Collected --> F[generate_workflow_node]
-    F --> G[Workflow Spec Ready]
+    subgraph UI["User Interface Layer"]
+        A1["Single-Page Web App (static/index.html + app.js)"]
+        A2["Streamlit Web Dashboard (app.py)"]
+    end
+
+    subgraph API["FastAPI REST Server (api.py)"]
+        B1["POST /chat Endpoint"]
+        B2["Session & State Manager"]
+    end
+
+    subgraph Agent["LangGraph Agent State Machine (agent.py)"]
+        C1["START: User Input"] --> C2["analyze_request_node"]
+        C2 --> C3{"Check Missing Info & Ambiguity"}
+        C3 -- "Clarification Required" --> C4["clarification_node"]
+        C4 --> C5["Wait for User Reply"]
+        C5 -->|"User provides missing detail"| C2
+        C3 -- "All Info Collected" --> C6["generate_workflow_node"]
+        C6 --> C7["Structured Workflow Spec (DAG)"]
+    end
+
+    subgraph ModelLayer["Multi-Model Fallback Engine (config.py)"]
+        M1["Primary: OpenRouter (gpt-oss-20b)"]
+        M2["Fallback 1: gpt-oss-120b"]
+        M3["Fallback 2: Llama-3.3-70b / Qwen-2.5-72b"]
+        M4["Fallback 3: Groq / OpenAI"]
+        M1 -.->|"On Error / Timeout"| M2 -.-> M3 -.-> M4
+    end
+
+    A1 --> B1
+    A2 --> B1
+    B1 --> C1
+    C2 <--> M1
+    C6 <--> M1
+    C7 --> B1
 ```
 
 ### Directory Structure

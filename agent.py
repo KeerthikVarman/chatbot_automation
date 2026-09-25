@@ -18,6 +18,7 @@ from models import (
     GeneratedWorkflow,
 )
 from tools import get_available_tools_prompt_summary
+from memory import reduce_conversation_context
 
 
 # ==========================================
@@ -25,54 +26,45 @@ from tools import get_available_tools_prompt_summary
 # ==========================================
 
 REQUIREMENT_ANALYSIS_SYSTEM_PROMPT = """
-You are an expert AI Workflow Architect similar to n8n's workflow builder assistant.
-Your task is to analyze natural language automation requests, determine what information is needed to build a structured workflow representation, and track collected vs missing details.
+Analyze natural language automation request. Track collected vs missing parameters.
 
-IMPORTANT RULES & INSTRUCTIONS:
-1. DYNAMIC REQUIREMENT IDENTIFICATION:
-   - Do NOT hard-code a fixed list of parameters for every request.
-   - Dynamically identify required parameters based on the specific user request type.
-   - Examples:
-     * Email Invoice Alert: required parameters might be email_platform, invoice_filter_or_label, notification_platform, notification_channel_or_recipient.
-     * GitHub Issue Alert: required parameters might be github_repository, issue_label, notification_platform, target_channel.
-     * Web Form to Sheet: required parameters might be form_source, google_sheet_name, worksheet_name, fields_to_save.
+CRITICAL RULES:
+1. STRICT ZERO-ASSUMPTION & NO TOOL BIAS:
+   - NEVER assume Slack, Gmail, or any specific platform unless explicitly named by user in prompt.
+   - If user says "send alert/notification" WITHOUT naming Slack: missing parameter is `notification_platform` and `destination_channel_or_recipient`.
+   - Do NOT ask "Which Slack channel..." if user did not mention Slack.
+   - If user did NOT mention platform, `next_question` MUST ask: "Which notification platform (e.g., Slack, Email, Teams, Discord) and channel/recipient should receive the notification?"
+   - If user DOES mention Slack explicitly, ONLY THEN ask for missing Slack details (e.g., "Which Slack channel or workspace should receive the notification?").
 
-2. ABSOLUTE NO ASSUMPTIONS & DYNAMIC PLATFORM CLARIFICATION:
-   - Do NOT assume or default to any specific service (e.g., Slack, Gmail, Google Sheets) unless explicitly mentioned in the user prompt.
-   - If the user request does not specify the target platform (e.g. "send an alert" or "notify me"), identify `notification_platform` as a missing parameter.
-   - Formulate `next_question` to ask which target platform and destination channel/recipient the user wants to use (e.g., "Which platform (e.g., Slack, Email, Discord, Teams) and destination channel/recipient should receive the notification?").
-   - If a parameter is missing, add it to `missing_information`.
+2. DYNAMIC REQUIREMENTS:
+   - Dynamically identify required parameters based on user request type. Do NOT hardcode fixed parameter lists.
 
 3. FULLY SPECIFIED REQUEST HANDLING:
-   - If the user's initial prompt ALREADY contains all core parameters for both trigger and action (e.g., email account, folder/subject, notification service, workspace, channel), do NOT invent optional missing parameters.
-   - Set `missing_information` = [], `ambiguities` = [], `clarification_required` = False, and `next_question` = None.
+   - If prompt already contains all required trigger and action parameters upfront, set `missing_information` = [], `ambiguities` = [], `clarification_required` = False, `next_question` = None.
 
-4. STRICT NON-DUPLICATION OF QUESTIONS:
-   - Check `collected_information` carefully. NEVER ask for a parameter that is already present in `collected_information`.
-   - Merge updated information provided by the user into `collected_information`.
+4. STRICT NON-DUPLICATION:
+   - Check `collected_information`. NEVER ask for a parameter already present in `collected_information`.
 
 5. AMBIGUITY DETECTION:
-   - If the request has vague terms (e.g., "Send important emails to my team" -> ambiguous email provider, ambiguous definition of "important", ambiguous recipient team), list these in `ambiguities`.
+   - Identify vague terms (e.g., "important emails", "my team") in `ambiguities`.
 
-6. ONE CLARIFICATION QUESTION AT A TIME:
+6. ONE QUESTION AT A TIME:
    - If `missing_information` or `ambiguities` exist, set `clarification_required` = True.
-   - Formulate `next_question` to ask ONLY ONE SINGLE clarification question covering the top missing item or ambiguity.
-   - NEVER ask multiple questions at once (e.g., do NOT ask "What email platform, label, and channel?").
+   - Formulate `next_question` to ask ONLY ONE SINGLE clarification question for the top missing item.
 
-Available Abstract Tools for Reference:
+Available Abstract Tools:
 {available_tools}
 """
 
 WORKFLOW_GENERATION_SYSTEM_PROMPT = """
-You are an expert AI Workflow Generator.
-Given a user's original request and all collected mandatory parameters, generate a complete structured workflow representation using nodes and edges.
+Generate structured workflow DAG from user request and collected parameters.
 
 RULES:
-1. Do NOT execute external workflows or make real API calls.
-2. Construct a logical DAG of workflow nodes (triggers, actions, filters, transformers) with proper configuration.
-3. Node `id` should be descriptive (e.g. 'gmail_trigger', 'slack_notification', 'github_issue_trigger').
-4. Include all collected parameters in the node `config` dicts.
-5. Create edges linking the nodes sequentially from trigger to filter/action.
+1. NO API CALLS: Build metadata DAG representation only. Do not execute APIs.
+2. LOGICAL DAG: Create sequential nodes (triggers, actions, filters, transformers) and linking edges.
+3. DESCRIPTIVE IDS: Use descriptive node `id` (e.g., 'gmail_trigger', 'slack_notification', 'github_issue_trigger').
+4. PARAM MAPPING: Map all collected parameters into corresponding node `config` dicts.
+5. EDGE CONNECTIONS: Link nodes sequentially from trigger to action/filter.
 
 Available Abstract Tools:
 {available_tools}
@@ -91,8 +83,12 @@ def analyze_request_node(state: WorkflowState) -> Dict[str, Any]:
         available_tools=get_available_tools_prompt_summary()
     )
 
+    # Apply Caveman context reduction to conversation history
+    raw_history = state.get("conversation_history", [])
+    reduced_history, caveman_metrics = reduce_conversation_context(raw_history)
+
     history_str = ""
-    for msg in state.get("conversation_history", []):
+    for msg in reduced_history:
         history_str += f"{msg['role'].upper()}: {msg['content']}\n"
 
     prev_collected = state.get("collected_information", {})
@@ -214,8 +210,9 @@ Generate a complete, structured GeneratedWorkflow representation with nodes and 
         temperature=0.0
     )
 
-    workflow_dict = workflow.model_dump()
-    final_msg = f"I have collected all required information and generated the workflow: '{workflow.name}'."
+    workflow_dict = workflow.model_dump() if workflow else {}
+    name = workflow.name if workflow else "Generated Workflow"
+    final_msg = f"I have collected all required information and generated the workflow: '{name}'."
 
     history = list(state.get("conversation_history", []))
     history.append({"role": "assistant", "content": final_msg})

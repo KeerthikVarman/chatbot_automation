@@ -36,6 +36,24 @@ MOCK_TOOLS_REGISTRY: Dict[str, ToolMetadata] = {
         description="Sends a notification message to a specified Slack channel or workspace.",
         supported_params=["workspace", "channel", "message_template", "recipient"]
     ),
+    "EmailNotificationActionTool": ToolMetadata(
+        name="Email Notification Action",
+        type="action",
+        description="Sends an email notification to specified recipient addresses.",
+        supported_params=["recipient_email", "subject", "message_body"]
+    ),
+    "TeamsNotificationActionTool": ToolMetadata(
+        name="Microsoft Teams Action",
+        type="action",
+        description="Sends a message or alert to a Microsoft Teams channel.",
+        supported_params=["team_name", "channel_name", "message_template"]
+    ),
+    "GenericNotificationActionTool": ToolMetadata(
+        name="Generic Notification Dispatcher",
+        type="action",
+        description="Dispatches a notification to any user-specified messaging platform.",
+        supported_params=["notification_platform", "destination_channel_or_recipient", "message"]
+    ),
     "GitHubTriggerTool": ToolMetadata(
         name="GitHub Issue Trigger",
         type="trigger",
