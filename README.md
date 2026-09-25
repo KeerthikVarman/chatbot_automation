@@ -1,5 +1,8 @@
 # AI Conversational Workflow Builder
 
+> **Live Production Cloud Deployment**: [https://aiconv-service-326779808453.asia-south1.run.app/](https://aiconv-service-326779808453.asia-south1.run.app/)  
+> **Cloud Infrastructure**: Google Cloud Run (`asia-south1`) | Automated CI/CD via Google Cloud Build & Artifact Registry
+
 An agentic AI workflow planning system built with LangGraph, FastAPI, Streamlit, and UI/UX Pro Max design standards.
 
 The application converts natural language automation requests into structured, executable DAG (Directed Acyclic Graph) workflow specifications with dynamic parameter extraction, single-question clarification loops, and automatic multi-model fallbacks.
@@ -94,6 +97,14 @@ OPENROUTER_MODEL="openai/gpt-oss-20b"
 GROQ_API_KEY="your_groq_api_key_here"
 OPENAI_API_KEY="your_openai_api_key_here"
 ```
+
+### Step 5: Multi-Model Fallback Protection
+
+The application includes automatic multi-model fallback execution (`config.py`). If the primary LLM model encounters rate limits, API timeouts, or provider downtime, the system automatically falls back to secondary models without breaking the user session:
+
+- **OpenRouter Fallbacks**: `openai/gpt-oss-20b` $\rightarrow$ `openai/gpt-oss-120b` $\rightarrow$ `meta-llama/llama-3.3-70b-instruct:free` $\rightarrow$ `qwen/qwen-2.5-72b-instruct`
+- **Groq Fallbacks**: `openai/gpt-oss-120b` $\rightarrow$ `openai/gpt-oss-20b` $\rightarrow$ `qwen/qwen3.8-27b`
+- **OpenAI Fallbacks**: `gpt-4o-mini` $\rightarrow$ `gpt-4o`
 
 ---
 
