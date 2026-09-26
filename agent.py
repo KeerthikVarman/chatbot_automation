@@ -36,11 +36,13 @@ CRITICAL RULES:
    - If user did NOT mention platform, `next_question` MUST ask: "Which notification platform (e.g., Slack, Email, Teams, Discord) and channel/recipient should receive the notification?"
    - If user DOES mention Slack explicitly, ONLY THEN ask for missing Slack details (e.g., "Which Slack channel or workspace should receive the notification?").
 
-2. DYNAMIC REQUIREMENTS:
-   - Dynamically identify required parameters based on user request type. Do NOT hardcode fixed parameter lists.
+2. DYNAMIC REQUIREMENTS & DESTINATION MANDATORY:
+   - Dynamically identify required parameters based on user request type.
+   - Every workflow MUST collect both TRIGGER/SOURCE details and DESTINATION details (where to send or store output, e.g. email address, Slack channel, Google Sheet name/ID, Webhook URL).
+   - If destination is unspecified or vague (e.g., "send details", "notify my team"), mark destination parameter in `missing_information` and ask where to send/save the details.
 
 3. FULLY SPECIFIED REQUEST HANDLING:
-   - If prompt already contains all required trigger and action parameters upfront, set `missing_information` = [], `ambiguities` = [], `clarification_required` = False, `next_question` = None.
+   - ONLY set `clarification_required` = False and `workflow_ready` = True if ALL required trigger and destination parameters are explicitly provided in context.
 
 4. STRICT NON-DUPLICATION:
    - Check `collected_information`. NEVER ask for a parameter already present in `collected_information`.
@@ -150,21 +152,32 @@ Analyze the complete context:
             if hasattr(item, "key") and hasattr(item, "value"):
                 new_collected_dict[item.key] = item.value
 
-    # Respect LLM clarification decision and detect fully specified requests
     core_keys = set(new_collected_dict.keys())
-    has_trigger_and_action = (
-        ("email_account" in core_keys or "subject_filter" in core_keys or "github_repository" in core_keys or "form_source" in core_keys) and
-        ("channel" in core_keys or "workspace" in core_keys or "google_sheet_name" in core_keys)
+    has_trigger = any(
+        any(term in k for term in ["email", "github", "form", "trigger", "source", "repo", "subject"])
+        for k in core_keys
+    )
+    has_destination = any(
+        any(term in k for term in ["channel", "workspace", "sheet", "recipient", "destination", "notification", "target"])
+        for k in core_keys
     )
 
-    if not analysis.clarification_required or has_trigger_and_action:
+    if has_trigger and has_destination and not analysis.ambiguities:
         analysis.missing_information = []
-        analysis.ambiguities = []
         analysis.clarification_required = False
-        workflow_ready = True
-    else:
-        has_missing = len(analysis.missing_information) > 0 or len(analysis.ambiguities) > 0
-        workflow_ready = not has_missing
+
+    has_missing = len(analysis.missing_information) > 0 or len(analysis.ambiguities) > 0
+    workflow_ready = (not analysis.clarification_required) and (not has_missing)
+
+    # Ensure a clear clarification question is present if workflow is not ready
+    question = analysis.next_question
+    if not workflow_ready and not question:
+        if analysis.missing_information:
+            question = f"Could you please specify the {analysis.missing_information[0].replace('_', ' ')}?"
+        elif analysis.ambiguities:
+            question = f"Could you please clarify: {analysis.ambiguities[0]}?"
+        else:
+            question = "Which platform or destination (e.g., Slack channel, email address, Google Sheet name) should receive or store the details?"
 
     return {
         "workflow_type": analysis.workflow_type,
@@ -172,7 +185,7 @@ Analyze the complete context:
         "collected_information": new_collected_dict,
         "missing_information": analysis.missing_information,
         "ambiguities": analysis.ambiguities,
-        "current_question": analysis.next_question if not workflow_ready else None,
+        "current_question": question if not workflow_ready else None,
         "workflow_ready": workflow_ready
     }
 
