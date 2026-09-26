@@ -116,17 +116,39 @@ Analyze the complete context:
 6. If clarification_required is True, set next_question to ask EXACTLY ONE question for the next missing parameter.
 """
 
-    analysis: RequirementAnalysis = invoke_structured_with_fallback(
-        schema_cls=RequirementAnalysis,
-        system_prompt=system_prompt,
-        user_prompt=user_prompt,
-        temperature=0.0
-    )
+    try:
+        analysis: Optional[RequirementAnalysis] = invoke_structured_with_fallback(
+            schema_cls=RequirementAnalysis,
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            temperature=0.0
+        )
+    except Exception as exc:
+        print(f"[Requirement Analysis Warning] Structured invocation failed: {exc}")
+        analysis = None
+
+    new_collected_dict = dict(prev_collected)
+
+    if analysis is None:
+        workflow_type = state.get("workflow_type") or "General Automation"
+        required_info = state.get("required_information") or ["workflow_details"]
+        missing_info = ["workflow_details"]
+        current_q = "Could you please specify more details about the workflow you would like to build?"
+        return {
+            "workflow_type": workflow_type,
+            "required_information": required_info,
+            "collected_information": new_collected_dict,
+            "missing_information": missing_info,
+            "ambiguities": [],
+            "current_question": current_q,
+            "workflow_ready": False
+        }
 
     # Convert CollectedParameter list to Dict for state storage
-    new_collected_dict = dict(prev_collected)
-    for item in analysis.collected_information:
-        new_collected_dict[item.key] = item.value
+    if hasattr(analysis, "collected_information") and analysis.collected_information:
+        for item in analysis.collected_information:
+            if hasattr(item, "key") and hasattr(item, "value"):
+                new_collected_dict[item.key] = item.value
 
     # Respect LLM clarification decision and detect fully specified requests
     core_keys = set(new_collected_dict.keys())
@@ -203,15 +225,19 @@ COLLECTED INFORMATION:
 Generate a complete, structured GeneratedWorkflow representation with nodes and edges.
 """
 
-    workflow: GeneratedWorkflow = invoke_structured_with_fallback(
-        schema_cls=GeneratedWorkflow,
-        system_prompt=system_prompt,
-        user_prompt=user_prompt,
-        temperature=0.0
-    )
+    try:
+        workflow: Optional[GeneratedWorkflow] = invoke_structured_with_fallback(
+            schema_cls=GeneratedWorkflow,
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            temperature=0.0
+        )
+    except Exception as exc:
+        print(f"[Workflow Generation Warning] Structured invocation failed: {exc}")
+        workflow = None
 
     workflow_dict = workflow.model_dump() if workflow else {}
-    name = workflow.name if workflow else "Generated Workflow"
+    name = workflow.name if (workflow and hasattr(workflow, "name")) else "Generated Workflow"
     final_msg = f"I have collected all required information and generated the workflow: '{name}'."
 
     history = list(state.get("conversation_history", []))

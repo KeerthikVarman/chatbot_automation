@@ -150,3 +150,37 @@ def test_fastapi_chat_flow():
     state_resp = client.get(f"/conversations/{cid}")
     assert state_resp.status_code == 200
     assert state_resp.json()["conversation_id"] == cid
+
+
+def test_llm_null_structured_output_fallback(monkeypatch):
+    """
+    Verify that if invoke_structured_with_fallback returns None or raises an Exception,
+    analyze_request_node and generate_workflow_node handle it gracefully without crashing.
+    """
+    from agent import analyze_request_node, generate_workflow_node
+
+    monkeypatch.setattr("agent.invoke_structured_with_fallback", lambda **kwargs: None)
+
+    mock_state = {
+        "conversation_id": "test_null_fallback",
+        "user_request": "Automate my email notifications",
+        "workflow_type": None,
+        "required_information": [],
+        "collected_information": {},
+        "missing_information": [],
+        "ambiguities": [],
+        "current_question": None,
+        "conversation_history": [],
+        "workflow_ready": False,
+        "generated_workflow": None
+    }
+
+    result = analyze_request_node(mock_state)
+    assert result["workflow_ready"] is False
+    assert "collected_information" in result
+    assert result["current_question"] is not None
+
+    gen_result = generate_workflow_node(mock_state)
+    assert gen_result["workflow_ready"] is True
+    assert gen_result["generated_workflow"] == {}
+

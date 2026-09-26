@@ -20,15 +20,16 @@ OPENROUTER_DEFAULT_MODEL = os.getenv("OPENROUTER_MODEL", "openai/gpt-oss-20b")
 
 OPENROUTER_FALLBACK_MODELS = [
     OPENROUTER_DEFAULT_MODEL,
-    "openai/gpt-oss-120b",
+    "google/gemini-2.0-flash-lite-preview-02-05:free",
     "meta-llama/llama-3.3-70b-instruct:free",
-    "qwen/qwen-2.5-72b-instruct"
+    "qwen/qwen-2.5-72b-instruct",
+    "openai/gpt-4o-mini"
 ]
 
 GROQ_FALLBACK_MODELS = [
-    "openai/gpt-oss-120b",
-    "openai/gpt-oss-20b",
-    "qwen/qwen3.8-27b"
+    "llama-3.3-70b-versatile",
+    "llama-3.1-8b-instant",
+    "mixtral-8x7b-32768"
 ]
 
 OPENAI_FALLBACK_MODELS = [
@@ -137,16 +138,28 @@ def invoke_structured_with_fallback(
                 kwargs["base_url"] = base_url
 
             llm = ChatOpenAI(**kwargs)
+            res = None
 
             try:
                 structured_llm = llm.with_structured_output(schema_cls, method="function_calling")
+                res = structured_llm.invoke([
+                    SystemMessage(content=system_prompt),
+                    HumanMessage(content=user_prompt)
+                ])
             except Exception:
-                structured_llm = llm.with_structured_output(schema_cls)
+                try:
+                    structured_llm = llm.with_structured_output(schema_cls)
+                    res = structured_llm.invoke([
+                        SystemMessage(content=system_prompt),
+                        HumanMessage(content=user_prompt)
+                    ])
+                except Exception as e_inner:
+                    raise e_inner
 
-            return structured_llm.invoke([
-                SystemMessage(content=system_prompt),
-                HumanMessage(content=user_prompt)
-            ])
+            if res is not None:
+                return res
+            else:
+                print(f"[LLM Fallback Warning] Provider '{provider}' Model '{model_name}' returned None. Retrying next model...")
 
         except Exception as e:
             last_exception = e
