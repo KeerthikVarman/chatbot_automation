@@ -6,7 +6,7 @@ START -> analyze_request -> check_missing_information -> (clarification | genera
 """
 
 import json
-from typing import Any, Dict, List, Literal
+from typing import Any, Dict, List, Literal, Optional
 
 from langchain_core.messages import SystemMessage, HumanMessage
 from langgraph.graph import StateGraph, START, END
